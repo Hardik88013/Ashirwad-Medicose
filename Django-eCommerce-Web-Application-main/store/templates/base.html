@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ashirwad World</title>
+    <link rel="stylesheet" href="{% static 'css/amazon.css' %}">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">
+        <a href="{% url 'products' %}">Ashirwad World</a>
+    </div>
+
+    <div class="search-bar">
+        <form method="GET" action="{% url 'products' %}">
+            <input type="text" name="q" placeholder="Search products...">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    <div class="nav-links">
+        {% if user.is_authenticated %}
+            Hello {{ user.username }}
+            <a href="{% url 'products' %}">Home</a>
+            <a href="{% url 'cart' %}">Cart</a>
+            <a href="{% url 'wishlist' %}">Wishlist</a>
+            <a href="{% url 'orders' %}">Orders</a>
+            {% if user.is_staff %}
+                <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+            {% endif %}
+            <a href="{% url 'logout' %}">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="main-container">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

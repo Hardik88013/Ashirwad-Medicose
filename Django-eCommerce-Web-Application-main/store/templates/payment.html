@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Payment Status</h2>
+
+<p>Status: {{ status }}</p>
+<p>Order ID: {{ order.id }}</p>
+
+<a href="{% url 'products' %}">
+    <button>Continue Shopping</button>
+</a>
+
+{% endblock %}

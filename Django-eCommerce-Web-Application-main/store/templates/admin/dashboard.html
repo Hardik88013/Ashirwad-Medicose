@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Admin Dashboard</h2>
+
+<a href="{% url 'admin_add_product' %}">
+    <button>Add Product</button>
+</a>
+
+<h3>Total Orders: {{ total_orders }}</h3>
+<h3>Total Revenue: ₹ {{ total_revenue }}</h3>
+
+<h3>Products</h3>
+{% for product in products %}
+<div class="product-card">
+    {{ product.name }} - ₹ {{ product.price }}
+    <a href="{% url 'admin_delete_product' product.id %}">Delete</a>
+</div>
+{% endfor %}
+
+<h3>Orders</h3>
+{% for order in orders %}
+<div class="product-card">
+    Order {{ order.id }} - {{ order.status }}
+
+    <form method="POST" action="{% url 'admin_update_order_status' order.id %}">
+        {% csrf_token %}
+        <select name="status">
+            <option>Success</option>
+            <option>Shipped</option>
+            <option>Delivered</option>
+        </select>
+        <button type="submit">Update</button>
+    </form>
+</div>
+{% endfor %}
+
+{% endblock %}
