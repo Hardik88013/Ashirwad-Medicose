@@ -7,38 +7,78 @@
 </head>
 <body>
 
-<div class="navbar">
+<div class="top-navbar">
+
     <div class="logo">
-        <a href="{% url 'products' %}">Ashirwad World</a>
+        <a href="{% url 'products' %}">Ashirwad Medicose 💊</a>
     </div>
+
+    <div class="location" id="user-location">
+        Delivering to Sirsa, Haryana 📍 (Other areas Coming Soon)
+    </div>
+
+    <script>
+        fetch('https://ipapi.co/json/')
+            .then(response => response.json())
+            .then(data => {
+                const locElement = document.getElementById('user-location');
+                if (data.city && data.city.toLowerCase() === 'sirsa') {
+                    locElement.innerHTML = `Delivering to Sirsa, Haryana 📍`;
+                } else {
+                    locElement.innerHTML = `📍 Deliveries only in Sirsa, Haryana (Your area: Coming Soon)`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('user-location').innerHTML = `Delivering to Sirsa, Haryana 📍`;
+            });
+    </script>
+
+
 
     <div class="search-bar">
         <form method="GET" action="{% url 'products' %}">
-            <input type="text" name="q" placeholder="Search products...">
-            <button type="submit">Search</button>
+            <input type="text" name="q" placeholder="Search medicines...">
+            <button type="submit">🔍</button>
         </form>
     </div>
 
-    <div class="nav-links">
+    <div class="nav-right">
         {% if user.is_authenticated %}
-            Hello {{ user.username }}
-            <a href="{% url 'products' %}">Home</a>
-            <a href="{% url 'cart' %}">Cart</a>
-            <a href="{% url 'wishlist' %}">Wishlist</a>
-            <a href="{% url 'orders' %}">Orders</a>
+            <span>Hello, {{ user.username }}</span>
             {% if user.is_staff %}
-                <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+                <a href="{% url 'admin_dashboard' %}" style="color: #febd69; font-weight: bold;">Dashboard</a>
             {% endif %}
+            <a href="{% url 'orders' %}">Orders</a>
+            <a href="{% url 'cart' %}">Cart 🛒</a>
             <a href="{% url 'logout' %}">Logout</a>
         {% else %}
+
             <a href="{% url 'login' %}">Login</a>
         {% endif %}
     </div>
+
+</div>
+
+
+<!-- 🔥 SECOND NAVBAR -->
+<div class="sub-navbar">
+
+    <a href="{% url 'products' %}">☰ All</a>
+    <a href="?category=medicine">💊 Medicines</a>
+    <a href="?category=firstaid">🩹 First Aid</a>
+    <a href="?category=personal">🧴 Personal Care</a>
+    <a href="?category=baby">👶 Baby Care</a>
+    <a href="?category=device">🩺 Devices</a>
+    <a href="{% url 'ai_suggest' %}">🤖 AI Help</a>
+
 </div>
 
 <div class="main-container">
     {% block content %}{% endblock %}
 </div>
-
+<!-- 🤖 FLOATING AI BUTTON -->
+<a href="{% url 'ai_suggest' %}" class="ai-float-btn">
+    🤖
+</a>
 </body>
 </html>

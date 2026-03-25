@@ -1,19 +1,80 @@
 {% extends "base.html" %}
 {% block content %}
 
+<!-- 🔥 HERO BANNER -->
+<div class="hero-banner">
+    <h1>Welcome to Ashirwad Medicose 💊</h1>
+    <p>Your Trusted Online Pharmacy</p>
+</div>
+
+
+<!-- 🔥 CATEGORY SECTION -->
+<h2 class="section-title">Shop by Category</h2>
+
+<div class="category-container">
+
+    <a href="?category=baby" class="category-card">👶<br>Baby Care</a>
+    <a href="?category=firstaid" class="category-card">🩹<br>First Aid</a>
+    <a href="?category=personal" class="category-card">🧴<br>Personal Care</a>
+    <a href="?category=medicine" class="category-card">💊<br>Medicines</a>
+    <a href="?category=device" class="category-card">🩺<br>Devices</a>
+    <a href="/products/" class="category-card">🔄<br>All</a>
+
+</div>
+
+
+<!-- 🔥 PRODUCTS GRID -->
+<h2 class="section-title">Trending Products</h2>
+
 <div class="product-grid">
     {% for product in products %}
     <div class="product-card">
+
         <a href="{% url 'product_detail' product.id %}">
             {% if product.image %}
                 <img src="{{ product.image.url }}">
             {% endif %}
             <h3>{{ product.name }}</h3>
         </a>
-        <p><strong>₹ {{ product.price }}</strong></p>
-        <a href="{% url 'add_to_cart' product.id %}">
-            <button>Add to Cart</button>
-        </a>
+
+        <p class="category-badge">{{ product.category|title }}</p>
+
+        <p class="price">
+            {% if product.discount_percentage > 0 %}
+                <span class="mrp-strikethrough">MRP: ₹{{ product.price }}</span>
+                <span class="discount-red">(-{{ product.discount_percentage }}%)</span><br>
+                ₹{{ product.discounted_price|floatformat:2 }}
+            {% else %}
+                ₹{{ product.price }}
+            {% endif %}
+        </p>
+
+        {% if product.stock_quantity < 5 and product.stock_quantity > 0 %}
+            <span class="stock-warning">⚠️ Only {{ product.stock_quantity }} left!</span>
+        {% elif product.stock_quantity == 0 %}
+            <span class="stock-warning">❌ Out of Stock</span>
+        {% endif %}
+
+        <div class="product-actions">
+            {% if user.is_staff %}
+                <a href="{% url 'admin_edit_product' product.id %}" style="width: 100%;">
+                    <button style="width: 100%; background: #232f3e;">Edit Product</button>
+                </a>
+            {% else %}
+                {% if product.stock_quantity > 0 %}
+                    <a href="{% url 'add_to_cart' product.id %}">
+                        <button>Add to Cart</button>
+                    </a>
+
+                    <a href="{% url 'toggle_wishlist' product.id %}">
+                        <button class="wishlist-btn">❤️</button>
+                    </a>
+                {% else %}
+                    <button style="width: 100%; background: #ccc; cursor: not-allowed;" disabled>Out of Stock</button>
+                {% endif %}
+            {% endif %}
+        </div>
+
     </div>
     {% empty %}
         <p>No products found.</p>

@@ -1,13 +1,22 @@
 {% extends "base.html" %}
+
 {% block content %}
+<div class="payment-box" style="width: 500px; margin: 100px auto; padding: 40px; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center;">
+    <div style="font-size: 60px; color: #43a047; margin-bottom: 20px;">✅</div>
+    <h2 style="color: #2e7d32; margin-bottom: 10px;">Order Placed Successfully!</h2>
+    <p style="color: #666; margin-bottom: 25px;">Thank you for shopping with Ashirwad Medicose. Your medicines will be delivered soon.</p>
+    
+    <div style="background: #f1f8e9; padding: 20px; border-radius: 8px; margin-bottom: 30px; text-align: left;">
+        <p><strong>Order ID:</strong> #{{ order.id }}</p>
+        <p><strong>Total Amount:</strong> ₹{{ order.total_amount }}</p>
+        <p><strong>Status:</strong> <span style="color: #2e7d32; font-weight: bold;">{{ status }}</span></p>
+        <p><strong>Estimated Delivery:</strong> Within 2-3 business hours</p>
+    </div>
 
-<h2>Payment Status</h2>
-
-<p>Status: {{ status }}</p>
-<p>Order ID: {{ order.id }}</p>
-
-<a href="{% url 'products' %}">
-    <button>Continue Shopping</button>
-</a>
-
+    <a href="{% url 'products' %}" style="text-decoration: none;">
+        <button style="padding: 12px 30px; background: #232f3e; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Continue Shopping</button>
+    </a>
+    <br><br>
+    <a href="{% url 'orders' %}" style="color: #232f3e; font-size: 14px; text-decoration: underline;">View My Orders</a>
+</div>
 {% endblock %}

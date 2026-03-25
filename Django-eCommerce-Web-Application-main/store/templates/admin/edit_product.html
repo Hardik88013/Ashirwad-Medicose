@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-box" style="width: 500px; margin: 50px auto; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);">
+    <h2>✏️ Edit Medical Product</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label>Product Name:</label>
+        <input type="text" name="name" value="{{ product.name }}" required style="width: 100%; padding: 10px; margin: 10px 0;">
+        
+        <label>Description:</label>
+        <textarea name="description" style="width: 100%; padding: 10px; margin: 10px 0; height: 100px;">{{ product.description }}</textarea>
+        
+        <label>Price (₹):</label>
+        <input type="number" name="price" step="0.01" value="{{ product.price }}" required style="width: 100%; padding: 10px; margin: 10px 0;">
+
+        <label>Discount Percentage (%):</label>
+        <input type="number" name="discount_percentage" step="0.1" value="{{ product.discount_percentage }}" required style="width: 100%; padding: 10px; margin: 10px 0;">
+
+        <label>Stock Quantity:</label>
+        <input type="number" name="stock_quantity" value="{{ product.stock_quantity }}" required style="width: 100%; padding: 10px; margin: 10px 0;">
+        
+        <label>Category:</label>
+        <select name="category" required style="width: 100%; padding: 10px; margin: 10px 0;">
+            <option value="medicine" {% if product.category == "medicine" %}selected{% endif %}>Medicines</option>
+            <option value="firstaid" {% if product.category == "firstaid" %}selected{% endif %}>First Aid</option>
+            <option value="personal" {% if product.category == "personal" %}selected{% endif %}>Personal Care</option>
+            <option value="baby" {% if product.category == "baby" %}selected{% endif %}>Baby Care</option>
+            <option value="device" {% if product.category == "device" %}selected{% endif %}>Health Devices</option>
+        </select>
+        
+        <label>Product Image (Leave blank to keep current):</label>
+        {% if product.image %}
+            <div style="margin: 10px 0;">
+                <img src="{{ product.image.url }}" style="height: 50px; border-radius: 4px;">
+            </div>
+        {% endif %}
+        <input type="file" name="image" style="width: 100%; padding: 10px; margin: 10px 0;">
+        
+        <button type="submit" style="width: 100%; padding: 12px; background: #232f3e; color: white; border-radius: 8px; font-weight: bold; margin-top: 20px;">Update Product</button>
+    </form>
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="{% url 'admin_dashboard' %}" style="color: #666; text-decoration: none;">← Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

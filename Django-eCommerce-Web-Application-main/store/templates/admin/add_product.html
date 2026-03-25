@@ -1,15 +1,37 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="auth-box" style="width: 500px; margin: 50px auto; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);">
+    <h2>📦 Add Medical Product</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label>Product Name:</label>
+        <input type="text" name="name" placeholder="e.g. Paracetamol 500mg" required style="width: 100%; padding: 10px; margin: 10px 0;">
+        
+        <label>Description:</label>
+        <textarea name="description" placeholder="Product details..." style="width: 100%; padding: 10px; margin: 10px 0; height: 100px;"></textarea>
+        
+        <label>Price (₹):</label>
+        <input type="number" name="price" step="0.01" placeholder="Price" required style="width: 100%; padding: 10px; margin: 10px 0;">
 
-<h2>Add Product</h2>
+        <label>Discount Percentage (%):</label>
+        <input type="number" name="discount_percentage" step="0.1" placeholder="0.0" value="0.0" required style="width: 100%; padding: 10px; margin: 10px 0;">
 
-<form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input type="text" name="name" placeholder="Product Name" required><br><br>
-    <textarea name="description" placeholder="Description"></textarea><br><br>
-    <input type="number" name="price" placeholder="Price" required><br><br>
-    <input type="file" name="image"><br><br>
-    <button type="submit">Add Product</button>
-</form>
-
+        <label>Stock Quantity:</label>
+        <input type="number" name="stock_quantity" placeholder="e.g. 50" value="10" required style="width: 100%; padding: 10px; margin: 10px 0;">
+        
+        <label>Category:</label>
+        <select name="category" required style="width: 100%; padding: 10px; margin: 10px 0;">
+            <option value="medicine">Medicines</option>
+            <option value="firstaid">First Aid</option>
+            <option value="personal">Personal Care</option>
+            <option value="baby">Baby Care</option>
+            <option value="device">Health Devices</option>
+        </select>
+        
+        <label>Product Image:</label>
+        <input type="file" name="image" style="width: 100%; padding: 10px; margin: 10px 0;">
+        
+        <button type="submit" style="width: 100%; padding: 12px; background: #2e7d32; color: white; border-radius: 8px; font-weight: bold; margin-top: 20px;">+ Add to Inventory</button>
+    </form>
+</div>
 {% endblock %}

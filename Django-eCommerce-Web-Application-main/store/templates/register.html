@@ -1,18 +1,60 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Register - Ashirwad World</title>
+    <title>Register - Ashirwad Medicose</title>
+    <link rel="stylesheet" href="{% static 'css/amazon.css' %}">
 </head>
-<body style="background:#EAEDED;">
-<div style="width:350px;margin:80px auto;background:white;padding:30px;border-radius:8px;">
-    <h2>Ashirwad World</h2>
-    <h3>Register</h3>
-    <form method="POST">
-        {% csrf_token %}
-        <input type="text" name="username" placeholder="Username" required><br><br>
-        <input type="password" name="password" placeholder="Password" required><br><br>
-        <button type="submit">Register</button>
-    </form>
+<body>
+
+<div class="premium-bg">
+
+    <div class="glass-card">
+
+        <h1 class="brand">Ashirwad Medicose 💊</h1>
+        <p class="subtitle">Create your account</p>
+
+        <h2>Join Us</h2>
+
+        {% if messages %}
+            <div class="messages" style="margin-bottom: 20px;">
+                {% for message in messages %}
+                    <p style="color: {% if message.tags == 'error' %}#d32f2f{% else %}#2e7d32{% endif %}; font-size: 14px; font-weight: bold; background: {% if message.tags == 'error' %}#feebee{% else %}#e8f5e9{% endif %}; padding: 10px; border-radius: 5px;">
+                        {{ message }}
+                    </p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="POST">
+
+            {% csrf_token %}
+
+            <input type="text" name="username" placeholder="Username" required>
+
+            <div class="password-box">
+                <input type="password" name="password" id="password" placeholder="Password" required>
+                <span onclick="togglePassword()">👁️</span>
+            </div>
+
+            <button type="submit">Register</button>
+        </form>
+
+        <p class="switch">
+            Already have an account?
+            <a href="{% url 'login' %}">Login</a>
+        </p>
+
+    </div>
+
 </div>
+
+<script>
+function togglePassword() {
+    const pass = document.getElementById("password");
+    pass.type = pass.type === "password" ? "text" : "password";
+}
+</script>
+
 </body>
 </html>

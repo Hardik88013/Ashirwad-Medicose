@@ -21,6 +21,7 @@ urlpatterns = [
         views.remove_from_cart,
         name='remove_from_cart'
     ),
+    path('ai/', views.ai_suggest, name='ai_suggest'),
 
 path('wishlist/toggle/<int:id>/', views.toggle_wishlist, name='toggle_wishlist'),
 path('wishlist/', views.wishlist_view, name='wishlist'),
@@ -30,6 +31,7 @@ path('wishlist/', views.wishlist_view, name='wishlist'),
     # ADMIN
 path('dashboard/', views.admin_dashboard, name='admin_dashboard'),
 path('dashboard/add-product/', views.admin_add_product, name='admin_add_product'),
+path('dashboard/edit-product/<int:id>/', views.admin_edit_product, name='admin_edit_product'),
 path('dashboard/delete-product/<int:id>/', views.admin_delete_product, name='admin_delete_product'),
 path(
     'dashboard/update-order/<int:id>/',

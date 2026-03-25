@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ai-box">
+    <h2>🤖 AI Pharmacy Assistant</h2>
+    <p>Tell me your symptoms, and I'll suggest some common over-the-counter medicines.</p>
+    
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="symptoms" placeholder="e.g. I have fever and headache" required>
+        <button type="submit">Get Suggestions</button>
+    </form>
+
+    {% if suggestions %}
+        <div class="result">
+            <h3>Based on your symptoms, consider:</h3>
+            <ul>
+                {% for s in suggestions %}
+                    <li>✅ {{ s|safe }}</li>
+                {% endfor %}
+
+            </ul>
+            <p><small>⚠️ Note: These suggestions are for information only. Always consult a doctor before taking medication.</small></p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
