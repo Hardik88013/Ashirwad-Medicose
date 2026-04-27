@@ -353,20 +353,26 @@ def admin_sales(request):
     
     # 1. Category wise Sales (Pie Chart) & Product Wise (Drilldown)
     category_sales = {}
-    product_sales = {} # category -> {product_name: sales}
+    category_qty = {}
+    product_sales = {} # category -> {product_name: revenue}
+    product_qty = {}   # category -> {product_name: qty_sold}
     
     for item in OrderItem.objects.filter(order__in=delivered_orders):
         cat = item.product.get_category_display()
         prod = item.product.name
-        rev = item.subtotal()
+        rev = float(item.subtotal())
+        qty = item.quantity
         
         # Category Aggregation
         category_sales[cat] = category_sales.get(cat, 0) + rev
+        category_qty[cat] = category_qty.get(cat, 0) + qty
         
         # Product Aggregation inside Category
         if cat not in product_sales:
             product_sales[cat] = {}
+            product_qty[cat] = {}
         product_sales[cat][prod] = product_sales[cat].get(prod, 0) + rev
+        product_qty[cat][prod] = product_qty[cat].get(prod, 0) + qty
 
     # 2. Daily Sales (Line/Points Chart)
     from django.db.models.functions import TruncDate
@@ -380,8 +386,10 @@ def admin_sales(request):
         'monthly_sales': monthly_sales,
         'yearly_sales': yearly_sales,
         'category_sales_labels': json.dumps(list(category_sales.keys())),
-        'category_sales_data': json.dumps([float(v) for v in category_sales.values()]),
+        'category_sales_data': json.dumps(list(category_sales.values())),
+        'category_qty_data': json.dumps(list(category_qty.values())),
         'product_sales_dict': json.dumps(product_sales),
+        'product_qty_dict': json.dumps(product_qty),
         'daily_labels': json.dumps(daily_labels),
         'daily_data': json.dumps(daily_data),
         'range_param': range_param,
