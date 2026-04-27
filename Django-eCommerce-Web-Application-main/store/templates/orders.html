@@ -2,15 +2,22 @@
 
 {% block content %}
 <div class="orders-container" style="padding: 20px; max-width: 800px; margin: auto;">
-    <h2>📦 Your Orders</h2>
+    {% if user.is_staff %}
+        <h2>📦 All Customer Orders</h2>
+    {% else %}
+        <h2>📦 Your Orders</h2>
+    {% endif %}
     <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 20px;">
 
     {% for order in orders %}
     <div class="order-card" style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
         <div class="order-info">
             <h3 style="margin: 0; font-size: 18px;">Order #{{ order.id }}</h3>
+            {% if user.is_staff %}
+                <p style="color: #2196f3; font-size: 13px; margin: 3px 0; font-weight: bold;">👤 Customer: {{ order.user.username }}</p>
+            {% endif %}
             <p style="color: #666; font-size: 14px; margin: 5px 0;">Placed on: {{ order.created_at|date:"d M Y, h:i A" }}</p>
-            <p style="font-weight: bold; margin: 10px 0 0 0;">Total Amount: ₹{{ order.total_amount }}</p>
+            <p style="font-weight: bold; margin: 10px 0 0 0;">Total Amount: Rs. {{ order.total_amount }}</p>
         </div>
         <div class="order-status" style="text-align: right;">
             <p style="margin-bottom: 10px; font-size: 14px;">Status:</p>
