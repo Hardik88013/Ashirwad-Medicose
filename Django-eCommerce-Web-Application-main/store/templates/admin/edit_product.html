@@ -19,6 +19,9 @@
         <label>Stock Quantity:</label>
         <input type="number" name="stock_quantity" value="{{ product.stock_quantity }}" required style="width: 100%; padding: 10px; margin: 10px 0;">
         
+        <label>Expiry Date:</label>
+        <input type="date" name="expiry_date" value="{{ product.expiry_date|date:'Y-m-d' }}" style="width: 100%; padding: 10px; margin: 10px 0;">
+        
         <label>Category:</label>
         <select name="category" required style="width: 100%; padding: 10px; margin: 10px 0;">
             <option value="medicine" {% if product.category == "medicine" %}selected{% endif %}>Medicines</option>

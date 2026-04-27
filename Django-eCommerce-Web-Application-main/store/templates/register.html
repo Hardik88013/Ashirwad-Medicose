@@ -30,7 +30,19 @@
 
             {% csrf_token %}
 
-            <input type="text" name="username" placeholder="Username" required>
+            <input type="text" name="name" placeholder="Full Name (Owner Details)" required>
+            <input type="email" name="email" placeholder="Email Address" required>
+            <input type="text" name="mobile" placeholder="Mobile Number" required>
+            <input type="number" name="age" placeholder="Age">
+            
+            <select name="gender" required style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ccc;">
+                <option value="" disabled selected>Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <input type="text" name="username" placeholder="Choose a Username" required>
 
             <div class="password-box">
                 <input type="password" name="password" id="password" placeholder="Password" required>

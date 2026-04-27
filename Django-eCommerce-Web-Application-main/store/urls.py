@@ -30,6 +30,8 @@ path('wishlist/', views.wishlist_view, name='wishlist'),
     path('orders/', views.orders, name='orders'),
     # ADMIN
 path('dashboard/', views.admin_dashboard, name='admin_dashboard'),
+path('dashboard/sales/', views.admin_sales, name='admin_sales'),
+path('dashboard/sales/export/', views.export_orders_csv, name='export_orders_csv'),
 path('dashboard/add-product/', views.admin_add_product, name='admin_add_product'),
 path('dashboard/edit-product/<int:id>/', views.admin_edit_product, name='admin_edit_product'),
 path('dashboard/delete-product/<int:id>/', views.admin_delete_product, name='admin_delete_product'),

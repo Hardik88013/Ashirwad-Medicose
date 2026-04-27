@@ -47,9 +47,12 @@
             <span>Hello, {{ user.username }}</span>
             {% if user.is_staff %}
                 <a href="{% url 'admin_dashboard' %}" style="color: #febd69; font-weight: bold;">Dashboard</a>
+                <a href="{% url 'admin_add_product' %}" style="color: #64dd17; font-weight: bold;">+ Add Product</a>
             {% endif %}
             <a href="{% url 'orders' %}">Orders</a>
-            <a href="{% url 'cart' %}">Cart 🛒</a>
+            {% if not user.is_staff %}
+                <a href="{% url 'cart' %}">Cart 🛒</a>
+            {% endif %}
             <a href="{% url 'logout' %}">Logout</a>
         {% else %}
 

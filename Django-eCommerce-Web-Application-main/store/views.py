@@ -3,19 +3,26 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.contrib import messages
-from .models import OrderItem, Product, Cart, Wishlist, Order
-
+from .models import OrderItem, Product, Cart, Wishlist, Order, UserProfile, Invoice
+import uuid
+import datetime
+from .utils import render_to_pdf
 
 # ================= AUTH =================
 
 def login_view(request):
     if request.method == "POST":
-        username = request.POST['username']
+        login_input = request.POST['username']
         password = request.POST['password']
 
-        user = authenticate(request, username=username, password=password)
+        # Try to find user by email or mobile first
+        user = None
+        users = User.objects.filter(Q(username=login_input) | Q(email=login_input) | Q(profile__mobile=login_input)).distinct()
+        if users.exists():
+            u = users.first()
+            user = authenticate(request, username=u.username, password=password)
 
         if user:
             login(request, user)
@@ -25,7 +32,7 @@ def login_view(request):
             else:
                 return redirect('products')
         else:
-            messages.error(request, "Invalid username or password.")
+            messages.error(request, "Invalid credentials.")
 
     return render(request, 'login.html')
 
@@ -34,11 +41,26 @@ def register_view(request):
     if request.method == "POST":
         username = request.POST['username']
         password = request.POST['password']
+        email = request.POST.get('email', '')
+        name = request.POST.get('name', '')
+        mobile = request.POST.get('mobile', '')
+        age = request.POST.get('age', '')
+        gender = request.POST.get('gender', '')
 
         if User.objects.filter(username=username).exists():
             messages.error(request, "Username already exists. Please choose another one.")
+        elif User.objects.filter(email=email).exists() and email != '':
+            messages.error(request, "Email already exists. Please choose another one.")
+        elif UserProfile.objects.filter(mobile=mobile).exists() and mobile != '':
+            messages.error(request, "Mobile number already exists.")
         else:
-            User.objects.create_user(username=username, password=password)
+            user = User.objects.create_user(username=username, email=email, password=password, first_name=name)
+            UserProfile.objects.create(
+                user=user,
+                mobile=mobile,
+                age=age if age else None,
+                gender=gender
+            )
             messages.success(request, "Registration successful. Please login.")
             return redirect('login')
 
@@ -225,7 +247,6 @@ def checkout(request):
 
         order = Order.objects.create(
             user=request.user,
-
             address=address,
             mobile=mobile,
             total_amount=total,
@@ -241,12 +262,22 @@ def checkout(request):
                 price=item.product.discounted_price
             )
 
+        # Generate Invoice
+        invoice_number = f"INV-{order.id}-{uuid.uuid4().hex[:6].upper()}"
+        pdf_file = render_to_pdf('invoice_template.html', {'order': order, 'invoice_number': invoice_number})
+        
+        invoice = Invoice(order=order, serial_number=invoice_number)
+        if pdf_file:
+            invoice.pdf.save(f"invoice_{invoice_number}.pdf", pdf_file)
+        invoice.save()
+
         # Clear cart
         cart_items.delete()
 
         return render(request, 'payment.html', {
             'status': status,
-            'order': order
+            'order': order,
+            'invoice': invoice
         })
 
     return render(request, 'checkout.html', {
@@ -259,7 +290,10 @@ def checkout(request):
 
 @login_required
 def orders(request):
-    user_orders = Order.objects.filter(user=request.user)
+    if request.user.is_staff:
+        user_orders = Order.objects.all().order_by('-created_at')
+    else:
+        user_orders = Order.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'orders.html', {'orders': user_orders})
 
 
@@ -272,18 +306,132 @@ def admin_dashboard(request):
 
     total_orders = orders.count()
 
-    total_revenue = (
-        orders.filter(status="Success")
-        .aggregate(total=Sum('total_amount'))['total'] or 0
-    )
+    # Near Products logic: Products expiring within 30 days
+    today = datetime.date.today()
+    thirty_days_later = today + datetime.timedelta(days=30)
+    near_products = Product.objects.filter(expiry_date__lte=thirty_days_later, expiry_date__gte=today).order_by('expiry_date')
 
     return render(request, 'admin/dashboard.html', {
         'products': products,
         'orders': orders,
         'total_orders': total_orders,
-        'total_revenue': total_revenue
+        'near_products': near_products
     })
 
+@staff_member_required
+def admin_sales(request):
+    delivered_orders = Order.objects.filter(status="Delivered")
+    
+    # ------------------ TIME FILTERING ------------------
+    range_param = request.GET.get('range', 'all')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    today = datetime.date.today()
+    if start_date and end_date:
+        s_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+        e_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+        delivered_orders = delivered_orders.filter(created_at__date__gte=s_date, created_at__date__lte=e_date)
+    elif range_param == 'today':
+        delivered_orders = delivered_orders.filter(created_at__date=today)
+    elif range_param == '1m':
+        delivered_orders = delivered_orders.filter(created_at__date__gte=today - datetime.timedelta(days=30))
+    elif range_param == '6m':
+        delivered_orders = delivered_orders.filter(created_at__date__gte=today - datetime.timedelta(days=180))
+    elif range_param == '1y':
+        delivered_orders = delivered_orders.filter(created_at__date__gte=today - datetime.timedelta(days=365))
+
+    # ------------------ HEAD CARD METRICS ------------------
+    total_sales = delivered_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+    monthly_orders = Order.objects.filter(status="Delivered", created_at__year=today.year, created_at__month=today.month)
+    monthly_sales = monthly_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+    yearly_orders = Order.objects.filter(status="Delivered", created_at__year=today.year)
+    yearly_sales = yearly_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+
+    # ------------------ CHART DATA AGGREGATION ------------------
+    import json
+    
+    # 1. Category wise Sales (Pie Chart) & Product Wise (Drilldown)
+    category_sales = {}
+    product_sales = {} # category -> {product_name: sales}
+    
+    for item in OrderItem.objects.filter(order__in=delivered_orders):
+        cat = item.product.get_category_display()
+        prod = item.product.name
+        rev = item.subtotal()
+        
+        # Category Aggregation
+        category_sales[cat] = category_sales.get(cat, 0) + rev
+        
+        # Product Aggregation inside Category
+        if cat not in product_sales:
+            product_sales[cat] = {}
+        product_sales[cat][prod] = product_sales[cat].get(prod, 0) + rev
+
+    # 2. Daily Sales (Line/Points Chart)
+    from django.db.models.functions import TruncDate
+    daily_sales_qs = delivered_orders.annotate(date=TruncDate('created_at')).values('date').annotate(daily_total=Sum('total_amount')).order_by('date')
+    
+    daily_labels = [dt['date'].strftime('%Y-%m-%d') for dt in daily_sales_qs]
+    daily_data = [float(dt['daily_total']) for dt in daily_sales_qs]
+
+    return render(request, 'admin/sales.html', {
+        'total_sales': total_sales,
+        'monthly_sales': monthly_sales,
+        'yearly_sales': yearly_sales,
+        'category_sales_labels': json.dumps(list(category_sales.keys())),
+        'category_sales_data': json.dumps([float(v) for v in category_sales.values()]),
+        'product_sales_dict': json.dumps(product_sales),
+        'daily_labels': json.dumps(daily_labels),
+        'daily_data': json.dumps(daily_data),
+        'range_param': range_param,
+        'start_date_param': start_date or '',
+        'end_date_param': end_date or '',
+    })
+
+import csv
+from django.http import HttpResponse
+
+@staff_member_required
+def export_orders_csv(request):
+    delivered_orders = Order.objects.filter(status="Delivered")
+    
+    range_param = request.GET.get('range', 'all')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    today = datetime.date.today()
+    if start_date and end_date:
+        s_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+        e_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+        delivered_orders = delivered_orders.filter(created_at__date__gte=s_date, created_at__date__lte=e_date)
+    elif range_param == 'today':
+        delivered_orders = delivered_orders.filter(created_at__date=today)
+    elif range_param == '1m':
+        delivered_orders = delivered_orders.filter(created_at__date__gte=today - datetime.timedelta(days=30))
+    elif range_param == '6m':
+        delivered_orders = delivered_orders.filter(created_at__date__gte=today - datetime.timedelta(days=180))
+    elif range_param == '1y':
+        delivered_orders = delivered_orders.filter(created_at__date__gte=today - datetime.timedelta(days=365))
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="orders.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Order ID', 'Customer', 'Mobile', 'Address', 'Total Amount (Rs)', 'Date', 'Status'])
+    
+    for order in delivered_orders:
+        writer.writerow([
+            order.id, 
+            order.user.username, 
+            order.mobile, 
+            order.address, 
+            order.total_amount, 
+            order.created_at.strftime('%Y-%m-%d %H:%M:%S'), 
+            order.status
+        ])
+        
+    return response
 
 @staff_member_required
 def admin_add_product(request):
@@ -294,6 +442,9 @@ def admin_add_product(request):
         discount_percentage = request.POST.get('discount_percentage', 0)
         stock_quantity = request.POST.get('stock_quantity', 10)
         category = request.POST['category']
+        expiry_date = request.POST.get('expiry_date')
+        if not expiry_date:
+            expiry_date = None
         image = request.FILES.get('image')
 
         Product.objects.create(
@@ -303,6 +454,7 @@ def admin_add_product(request):
             discount_percentage=discount_percentage,
             stock_quantity=stock_quantity,
             category=category,
+            expiry_date=expiry_date,
             image=image
         )
 
@@ -329,6 +481,11 @@ def admin_edit_product(request, id):
         product.discount_percentage = request.POST.get('discount_percentage', 0)
         product.stock_quantity = request.POST.get('stock_quantity', 10)
         product.category = request.POST['category']
+        expiry_date = request.POST.get('expiry_date')
+        if expiry_date:
+            product.expiry_date = expiry_date
+        else:
+            product.expiry_date = None
         
         if request.FILES.get('image'):
             product.image = request.FILES.get('image')

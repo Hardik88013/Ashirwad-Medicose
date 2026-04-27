@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-container" style="padding: 20px;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 10px;">
+        <h1 style="margin: 0;">📈 Sales Report & Analytics</h1>
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'export_orders_csv' %}?range={{ range_param }}&start_date={{ start_date_param }}&end_date={{ end_date_param }}" style="text-decoration: none;">
+                <button style="background: #2196f3; color: white; padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">📥 Download Orders (CSV)</button>
+            </a>
+            <a href="{% url 'admin_dashboard' %}">
+                <button style="background: #666; color: white; padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer;">← Back</button>
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px;">
+        <form method="GET" action="{% url 'admin_sales' %}" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="submit" name="range" value="all" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #ddd; background: {% if range_param == 'all' and not start_date_param %}#232f3e; color: white;{% else %}white; color: black;{% endif %}">All Time</button>
+                <button type="submit" name="range" value="today" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #ddd; background: {% if range_param == 'today' and not start_date_param %}#232f3e; color: white;{% else %}white; color: black;{% endif %}">Today</button>
+                <button type="submit" name="range" value="1m" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #ddd; background: {% if range_param == '1m' and not start_date_param %}#232f3e; color: white;{% else %}white; color: black;{% endif %}">1 Month</button>
+                <button type="submit" name="range" value="6m" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #ddd; background: {% if range_param == '6m' and not start_date_param %}#232f3e; color: white;{% else %}white; color: black;{% endif %}">6 Months</button>
+                <button type="submit" name="range" value="1y" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #ddd; background: {% if range_param == '1y' and not start_date_param %}#232f3e; color: white;{% else %}white; color: black;{% endif %}">1 Year</button>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: center; border-left: 2px solid #eee; padding-left: 15px;">
+                <label><b>Custom Date:</b></label>
+                <input type="date" name="start_date" value="{{ start_date_param }}" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                <span>to</span>
+                <input type="date" name="end_date" value="{{ end_date_param }}" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                <button type="submit" style="background: #2e7d32; color: white; padding: 8px 15px; border-radius: 4px; border: none;">Filter</button>
+                {% if start_date_param %}
+                    <a href="{% url 'admin_sales' %}" style="color: red; text-decoration: none; font-size: 14px;">Clear Filter</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="stats-row" style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px;">
+        <div class="stat-card" style="background: #232f3e; color: white; padding: 30px; border-radius: 12px; flex: 1; min-width: 250px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0;">Monthly Sale</h3>
+            <p style="font-size: 32px; font-weight: bold; margin-bottom: 0;">Rs. {{ monthly_sales|floatformat:2 }}</p>
+        </div>
+        <div class="stat-card" style="background: #ff9800; color: white; padding: 30px; border-radius: 12px; flex: 1; min-width: 250px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0;">Yearly Sale</h3>
+            <p style="font-size: 32px; font-weight: bold; margin-bottom: 0;">Rs. {{ yearly_sales|floatformat:2 }}</p>
+        </div>
+        <div class="stat-card" style="background: #2e7d32; color: white; padding: 30px; border-radius: 12px; flex: 1; min-width: 250px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0;">Total Selected Sales</h3>
+            <p style="font-size: 32px; font-weight: bold; margin-bottom: 0;">Rs. {{ total_sales|floatformat:2 }}</p>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <style>
+        .chart-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; }
+        .chart-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); flex: 1; min-width: 300px; width: 100%; }
+        .chart-container-inner { position: relative; height: 350px; width: 100%; }
+    @media (max-width: 768px) {
+        .chart-row { flex-direction: column; }
+    }
+    </style>
+    <div class="chart-row">
+        <!-- Pie Chart -->
+        <div class="chart-card" style="text-align: center; max-width: 400px; margin: 0 auto;">
+            <h3>Sales by Category</h3>
+            <div class="chart-container-inner">
+                <canvas id="categoryPieChart"></canvas>
+            </div>
+            
+            <!-- Context Box for Product Drilldown -->
+            <div id="productDrilldown" style="margin-top: 20px; text-align: left; background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; display: none;">
+                <h4 id="drilldownTitle" style="margin-top: 0;">Category Details</h4>
+                <ul id="drilldownList" style="list-style: none; padding: 0; margin: 0;"></ul>
+            </div>
+        </div>
+
+        <!-- Line Chart -->
+        <div class="chart-card" style="flex: 2;">
+            <h3>Sales Trend (Revenue Per Day)</h3>
+            <div class="chart-container-inner">
+                <canvas id="dailySalesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Parse Django Context Variables
+        const categoryLabels = JSON.parse('{{ category_sales_labels|escapejs }}');
+        const categoryData = JSON.parse('{{ category_sales_data|escapejs }}');
+        const productSalesDict = JSON.parse('{{ product_sales_dict|escapejs }}');
+        
+        const dailyLabels = JSON.parse('{{ daily_labels|escapejs }}');
+        const dailyData = JSON.parse('{{ daily_data|escapejs }}');
+        
+        // --- Line Chart (Stock-style Daily Sales) ---
+        const lineCtx = document.getElementById('dailySalesChart').getContext('2d');
+        new Chart(lineCtx, {
+            type: 'line',
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: 'Sales Revenue (Rs.)',
+                    data: dailyData,
+                    borderColor: '#2e7d32',
+                    backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#ff9800',
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) { return 'Rs. ' + value; }
+                        }
+                    }
+                }
+            }
+        });
+
+        // --- Pie Chart (Category Breakdown) ---
+        const pieCtx = document.getElementById('categoryPieChart').getContext('2d');
+        const pieChart = new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    data: categoryData,
+                    backgroundColor: [
+                        '#ff9800', '#2e7d32', '#2196f3', '#e91e63', '#9c27b0', '#00bcd4'
+                    ],
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                onClick: (e) => {
+                    const activePoints = pieChart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+                    if (activePoints.length > 0) {
+                        const idx = activePoints[0].index;
+                        const label = pieChart.data.labels[idx];
+                        showDrilldown(label);
+                    }
+                }
+            }
+        });
+
+        // Show Drilldown Details
+        function showDrilldown(category) {
+            const listEl = document.getElementById('drilldownList');
+            const titleEl = document.getElementById('drilldownTitle');
+            const containerEl = document.getElementById('productDrilldown');
+            
+            titleEl.innerHTML = `Products sold in <b>${category}</b>`;
+            listEl.innerHTML = '';
+            
+            const products = productSalesDict[category];
+            if (products) {
+                // Sort products by sales descending
+                const sortedProducts = Object.entries(products).sort((a, b) => b[1] - a[1]);
+                
+                sortedProducts.forEach(([prodName, prodSales]) => {
+                    const li = document.createElement('li');
+                    li.style.borderBottom = "1px solid #eee";
+                    li.style.padding = "8px 0";
+                    li.style.display = "flex";
+                    li.style.justifyContent = "space-between";
+                    
+                    li.innerHTML = `<span>${prodName}</span> <b>Rs. ${prodSales.toFixed(2)}</b>`;
+                    listEl.appendChild(li);
+                });
+                containerEl.style.display = 'block';
+            }
+        }
+    });
+</script>
+
+{% endblock %}

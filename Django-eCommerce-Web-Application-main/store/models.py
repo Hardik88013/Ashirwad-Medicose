@@ -18,6 +18,7 @@ class Product(models.Model):
     stock_quantity = models.PositiveIntegerField(default=10)  # ✅ NEW
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='medicine')
     image = models.ImageField(upload_to='products/', null=True, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
 
     @property
     def discounted_price(self):
@@ -25,6 +26,16 @@ class Product(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.category})"
+        
+        
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    mobile = models.CharField(max_length=15, unique=True, null=True, blank=True)
+    age = models.PositiveIntegerField(null=True, blank=True)
+    gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], null=True, blank=True)
+    
+    def __str__(self):
+        return self.user.username
 
 
 class Cart(models.Model):
@@ -79,3 +90,12 @@ class OrderItem(models.Model):
 
     def subtotal(self):
         return self.quantity * self.price
+
+class Invoice(models.Model):
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='invoice')
+    serial_number = models.CharField(max_length=50, unique=True)
+    pdf = models.FileField(upload_to='invoices/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Invoice {self.serial_number} for Order #{self.order.id}"

@@ -12,6 +12,14 @@
         <p><strong>Status:</strong> <span style="color: #2e7d32; font-weight: bold;">{{ status }}</span></p>
         <p><strong>Estimated Delivery:</strong> Within 2-3 business hours</p>
     </div>
+    
+    {% if invoice and invoice.pdf %}
+    <div style="margin-bottom: 20px;">
+        <a href="{{ invoice.pdf.url }}" target="_blank" style="text-decoration: none;">
+            <button style="padding: 10px 20px; background: #e67a00; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Download Invoice (PDF)</button>
+        </a>
+    </div>
+    {% endif %}
 
     <a href="{% url 'products' %}" style="text-decoration: none;">
         <button style="padding: 12px 30px; background: #232f3e; color: white; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Continue Shopping</button>
